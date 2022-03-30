@@ -1,0 +1,169 @@
+library(tidyverse)
+library(lubridate)
+library(gridExtra)    # to stack different plots
+
+source("forecast_plot.R")
+source("coverage_plot.R")
+source("reliability_plot.R")
+source("murphy_plot.R")
+
+RELIABILITY_QUANTIL <- 0.75
+MURPHY_QUANTIL <- 0.75
+
+B_COVERAGE <- 99
+N_RES_RELIABILITY <- 99
+
+SOURCES <- list(
+  "Solar" = c(
+  "IDR SSRD" = "predictions/solar_IDR_SSRD/",
+  "IDR SSRD cond hour" = "predictions/solar_IDR_SSRD_condHour/",
+  "NNQF + MLP" = "predictions/solar_NNQF_onlyRad/"
+  ),
+  "Wind_old" = c(
+    "IDR" = "predictions/wind_IDR_S100/",
+    "IDR cond" = "predictions/wind_IDR_S100_condWindAngle/",
+    "NNQF + MLP" = "predictions/wind_NNQF_UVS_50/"
+  ),
+  "Wind" = c(
+    "IDR cond" = "predictions/wind_IDR_S100_condWindAngle/",
+    "NNQF + MLP" = "predictions/wind_NNQF_UVS_h100_50/",
+    "QRF" = "predictions/wind_QRF_lag12_noAngle/"
+  ),
+  "Wind_nnqf" = c(
+    "NNQF+MLP-old" = "../GEFCom14_NNQF/wind_predictions/UVS_50/",
+    "NNQF+MLP-new-big-100hidden" = "../GEFCom14_NNQF/wind_predictions2/UVS_h100_50/",
+    "NNQF+MLP-new-small-4lags" = "../GEFCom14_NNQF/wind_predictions2/UVS_lag4_50/"
+  ),
+  "Price" = c(
+    "IDR FTL" = "predictions/price_IDR_FTL/",
+    "IDR FZL cond season" = "predictions/price_IDR_FZL_condSeason/",
+    "NNQF + MLP" = "predictions/price_NNQF_All/"
+  ),
+  "Load" = c(
+    "IDR w_mean" = "predictions/load_IDR_mean-W_winSum/",
+    "IDR w_mean cond month" = "predictions/load_IDR_mean-W_winSum_condMonth/",
+    "NNQF + MLP" = "predictions/load_NNQF_mean-W/"
+  )
+)
+
+ZONES <- list("Solar"=1:3, "Wind"=1:10, "Price"=1, "Load"=1)
+
+
+get_forecasts <- function(track, tasks=1:12, zones=NA) {
+  if (is.na(zones)) {
+    zones <- ZONES[[track]]
+  }
+  sources <- SOURCES[[track]]
+  collect_data <- data.frame()
+
+  files <- character()    # store all files that should be read in
+  for (z in zones) {      # product from tasks and zones
+    files <- c(files, paste0("Task", tasks, "_", z, ".csv"))
+  }
+
+  y_ref <- NULL
+  for (name in names(sources)) {
+    for (f in files) {
+      csv_path <- paste0(sources[[name]], f)
+      df <- read.csv(csv_path, row.names=1) %>%
+        rename(target_end_date = time, truth=y, location = zoneid) %>%
+        pivot_longer(cols = paste0("X", 1:99 * 0.01), names_to = "quantile") %>%
+        mutate(quantile = as.numeric(substring(quantile, 2)),
+              target_end_date = ymd_hms(target_end_date),
+              model = name) %>%
+        select(-score)
+
+      # wind track had NA values, filter them
+      if (track == "Wind") {
+        df <- filter(df, !is.na(truth))
+      }
+
+      collect_data <- rbind(collect_data, df)
+    }
+    # in order to use truth for joining we have to set it equal
+    # (it's a float, thus small deviations can disturb joining)
+    if (is.null(y_ref)) {
+      y_ref <- collect_data$truth
+    } else {
+      # check for correctness
+      if (sum(abs(y_ref - collect_data[collect_data$model == name, "truth"])) >= 10^-6) {
+        print("Possible error")
+      }
+      collect_data[collect_data$model == name, "truth"] <- y_ref
+    }
+  }
+  return(collect_data)
+}
+
+calc_scores <- function(df) {
+  scores <- df %>% group_by(model) %>%
+    summarise(mean_pinball_score = mean((1 * (value > truth) - quantile) * (value - truth)),
+              .groups = "drop")
+  print(scores)
+}
+
+assemble_plot <- function(track, name, task=1, zone=NA, rel_add="hist1") {
+  print("Starting...")
+  df <- get_forecasts(track, tasks = task, zone = zone)
+  print("get_forecast done")
+
+  calc_scores(df)
+
+  super_title <- ggplot() +
+    ggtitle("GEFCom14 Wind Track Zone 1") +
+    theme(plot.background=element_blank(), panel.background=element_blank(),
+          plot.title=element_text(size=15))
+
+  forecast_plots <- get_forecast_plots(df)
+  forecast_plots <- forecast_plots +
+    ggtitle("Quantile Forecasts")
+  print("forecast_plot done")
+
+  coverage_plots <- get_coverage_plots(df, B_COVERAGE)
+  coverage_plots <- coverage_plots +
+    ggtitle("Coverage Plots")
+  print("coverage_plot done")
+
+  reliability_plots <- get_reliability_plots(df, RELIABILITY_QUANTIL, N_RES_RELIABILITY,
+                                             add_layer=rel_add, load_interrim=FALSE)
+  reliability_plots <- reliability_plots +
+    ggtitle(expr(paste("Reliability Diagrams (", alpha, " = ", !!RELIABILITY_QUANTIL, ")")))
+  print("reliability_plot done")
+
+  murphy_plots <- get_murphy_plots(df, MURPHY_QUANTIL)
+  murphy_plots <- murphy_plots +
+    ggtitle(expr(paste("Murphy Diagram (", alpha, " = ", !!MURPHY_QUANTIL, ")")))
+  print("murphy_plot done")
+  # old heights c(0.05, 0.228, 0.245, 0.249, 0.228)
+  assembled_plot <- grid.arrange(super_title, forecast_plots, coverage_plots, reliability_plots,
+                                 murphy_plots, ncol=1, heights=c(0.05, rep(0.95/4, 4)))
+
+  ggsave(paste0("figures/", track, "/", name, ".pdf"), plot=assembled_plot,
+         width=200, height=260, unit="mm", device = "pdf", dpi=300)
+  print("Finished.")
+  return(assembled_plot)
+}
+
+# pl <- assemble_plot(track="Solar", name="Figure10_8")
+pl <- assemble_plot(track="Wind", name="Figure10_24", task=1:12, zone=1,
+                    rel_add="points")
+# pl <- assemble_plot(track="Price", name="Figure10_3")
+# pl <- assemble_plot(track="Load", name="Figure10_1")
+
+
+plot_all_quantiles <- function() {
+  df <- get_forecasts("Solar", tasks=1) %>% filter(model == "IDR SSRD")
+  pl <- get_reliability_plots(df, quantile_level = NA, n_resamples = 9,
+                              all_quantiles_one_model = TRUE)
+  pl <- pl + ggtitle("Reliability of IDR SSRD")
+  ggsave("figures/Solar/Reliability_all_quantiles_IDR_SSRD.png", plot=pl, width=23, height=21)
+}
+
+plot_all <- function() {
+  for (task in 1:12) {
+    pl <- assemble_plot(track="Wind", name=paste0("Figure10_4_Task", task), task=task)
+  }
+  for (zone in 1:10) {
+    pl <- assemble_plot(track="Wind", name=paste0("Figure10_4_Zone", zone), task=1:12, zone=zone)
+  }
+}
