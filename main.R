@@ -20,7 +20,7 @@ SOURCES <- c(
 )
 
 
-get_forecasts <- function(track, tasks=1:12, zones=NA) {
+get_forecasts <- function(tasks=1:12, zones=NA) {
   if (is.na(zones)) {
     zones <- 1:10
   }
@@ -44,9 +44,7 @@ get_forecasts <- function(track, tasks=1:12, zones=NA) {
         select(-score)
 
       # wind track had NA values, filter them
-      if (track == "Wind") {
-        df <- filter(df, !is.na(truth))
-      }
+      df <- filter(df, !is.na(truth))
 
       collect_data <- rbind(collect_data, df)
     }
@@ -72,9 +70,9 @@ calc_scores <- function(df) {
   print(scores)
 }
 
-assemble_plot <- function(track, name, task=1, zone=NA, rel_add="hist1") {
+assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   print("Starting...")
-  df <- get_forecasts(track, tasks = task, zone = zone)
+  df <- get_forecasts(tasks = task, zone = zone)
   print("get_forecast done")
 
   calc_scores(df)
@@ -108,32 +106,10 @@ assemble_plot <- function(track, name, task=1, zone=NA, rel_add="hist1") {
   assembled_plot <- grid.arrange(super_title, forecast_plots, coverage_plots, reliability_plots,
                                  murphy_plots, ncol=1, heights=c(0.05, rep(0.95/4, 4)))
 
-  ggsave(paste0("figures/", track, "/", name, ".pdf"), plot=assembled_plot,
+  ggsave(paste0("figures/Wind/", name, ".pdf"), plot=assembled_plot,
          width=200, height=260, unit="mm", device = "pdf", dpi=300)
   print("Finished.")
   return(assembled_plot)
 }
 
-# pl <- assemble_plot(track="Solar", name="Figure10_8")
-pl <- assemble_plot(track="Wind", name="Figure10_24", task=1:12, zone=1,
-                    rel_add="points")
-# pl <- assemble_plot(track="Price", name="Figure10_3")
-# pl <- assemble_plot(track="Load", name="Figure10_1")
-
-
-plot_all_quantiles <- function() {
-  df <- get_forecasts("Solar", tasks=1) %>% filter(model == "IDR SSRD")
-  pl <- get_reliability_plots(df, quantile_level = NA, n_resamples = 9,
-                              all_quantiles_one_model = TRUE)
-  pl <- pl + ggtitle("Reliability of IDR SSRD")
-  ggsave("figures/Solar/Reliability_all_quantiles_IDR_SSRD.png", plot=pl, width=23, height=21)
-}
-
-plot_all <- function() {
-  for (task in 1:12) {
-    pl <- assemble_plot(track="Wind", name=paste0("Figure10_4_Task", task), task=task)
-  }
-  for (zone in 1:10) {
-    pl <- assemble_plot(track="Wind", name=paste0("Figure10_4_Zone", zone), task=1:12, zone=zone)
-  }
-}
+pl <- assemble_plot(name="Figure10_24", task=1:12, zone=1, rel_add="points")
