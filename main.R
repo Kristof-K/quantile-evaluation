@@ -13,47 +13,17 @@ MURPHY_QUANTIL <- 0.75
 B_COVERAGE <- 99
 N_RES_RELIABILITY <- 99
 
-SOURCES <- list(
-  "Solar" = c(
-  "IDR SSRD" = "predictions/solar_IDR_SSRD/",
-  "IDR SSRD cond hour" = "predictions/solar_IDR_SSRD_condHour/",
-  "NNQF + MLP" = "predictions/solar_NNQF_onlyRad/"
-  ),
-  "Wind_old" = c(
-    "IDR" = "predictions/wind_IDR_S100/",
-    "IDR cond" = "predictions/wind_IDR_S100_condWindAngle/",
-    "NNQF + MLP" = "predictions/wind_NNQF_UVS_50/"
-  ),
-  "Wind" = c(
+SOURCES <- c(
     "IDR cond" = "predictions/wind_IDR_S100_condWindAngle/",
     "NNQF + MLP" = "predictions/wind_NNQF_UVS_h100_50/",
     "QRF" = "predictions/wind_QRF_lag12_noAngle/"
-  ),
-  "Wind_nnqf" = c(
-    "NNQF+MLP-old" = "../GEFCom14_NNQF/wind_predictions/UVS_50/",
-    "NNQF+MLP-new-big-100hidden" = "../GEFCom14_NNQF/wind_predictions2/UVS_h100_50/",
-    "NNQF+MLP-new-small-4lags" = "../GEFCom14_NNQF/wind_predictions2/UVS_lag4_50/"
-  ),
-  "Price" = c(
-    "IDR FTL" = "predictions/price_IDR_FTL/",
-    "IDR FZL cond season" = "predictions/price_IDR_FZL_condSeason/",
-    "NNQF + MLP" = "predictions/price_NNQF_All/"
-  ),
-  "Load" = c(
-    "IDR w_mean" = "predictions/load_IDR_mean-W_winSum/",
-    "IDR w_mean cond month" = "predictions/load_IDR_mean-W_winSum_condMonth/",
-    "NNQF + MLP" = "predictions/load_NNQF_mean-W/"
-  )
 )
-
-ZONES <- list("Solar"=1:3, "Wind"=1:10, "Price"=1, "Load"=1)
 
 
 get_forecasts <- function(track, tasks=1:12, zones=NA) {
   if (is.na(zones)) {
-    zones <- ZONES[[track]]
+    zones <- 1:10
   }
-  sources <- SOURCES[[track]]
   collect_data <- data.frame()
 
   files <- character()    # store all files that should be read in
@@ -62,9 +32,9 @@ get_forecasts <- function(track, tasks=1:12, zones=NA) {
   }
 
   y_ref <- NULL
-  for (name in names(sources)) {
+  for (name in names(SOURCES)) {
     for (f in files) {
-      csv_path <- paste0(sources[[name]], f)
+      csv_path <- paste0(SOURCES[[name]], f)
       df <- read.csv(csv_path, row.names=1) %>%
         rename(target_end_date = time, truth=y, location = zoneid) %>%
         pivot_longer(cols = paste0("X", 1:99 * 0.01), names_to = "quantile") %>%
