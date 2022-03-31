@@ -126,16 +126,9 @@ get_annotation <- function(df, quantile, facet_lims) {
   #ymin = -2000, ymax=4000, xmin=10000, xmax=15000)
 }
 
-get_reliability_plots <- function(df, quantile_level, n_resamples, all_quantiles_one_model=FALSE,
-                                  add_layer="hist1", load_interrim=FALSE) {
-  if (!all_quantiles_one_model) {
-    df <- filter(df, quantile == quantile_level)
-    facet_var <- "model"
-    nrows <- 1
-  } else {
-    facet_var <- "quantile"
-    nrows <- 10
-  }
+get_reliability_plots <- function(df, quantile_level, n_resamples, add_layer="hist1",
+                                  load_interrim=FALSE) {
+  df <- filter(df, quantile == quantile_level)
 
   if (!load_interrim) {
     recal_and_bands <- df %>% group_by(model, quantile) %>%
@@ -168,8 +161,8 @@ get_reliability_plots <- function(df, quantile_level, n_resamples, all_quantiles
               .groups = "drop")
 
   main_plot <- ggplot(recal_and_bands, aes(x, x_rc, group=model)) +
-    facet_wrap(facet_var, nrow=nrows) +
-  {if (add_layer == "points") geom_point(aes(x, y), alpha=0.075, size=0.05)} +
+    facet_grid(quantile ~ model) +
+  {if (add_layer == "points") geom_point(aes(x, y), alpha=0.05, size=0.05)} +
   {if (add_layer == "bin2d") geom_bin2d(aes(x=x, y=y, alpha=log(..count..)), fill="#746b6b", bins=30)} +
   {if (add_layer == "bin2d") scale_alpha_continuous("Count", labels=function(x) floor(exp(x)))} +
   {if (add_layer == "hist2") geom_histogram(mapping = aes(x = x,y = 0.2*max(facet_lims$mx)*after_stat(count/max(count))),
@@ -198,7 +191,9 @@ get_reliability_plots <- function(df, quantile_level, n_resamples, all_quantiles
           legend.justification=c(1,0), legend.position=c(0.99,0.01),
           legend.background=element_blank(), legend.box.background=element_blank(),
           legend.title=element_text(size=6, face = "bold"),
-          legend.text=element_text(size=6), legend.key.size = unit(0.4, "lines"))
+          legend.text=element_text(size=6), legend.key.size = unit(0.4, "lines"),
+          strip.background.x = element_blank(),  # no facet boxes in x direction
+          strip.text.x = element_blank())        # no facet texts in x direction)
 
   if (add_layer == "hist1") {
     insets <- recal_and_bands %>%

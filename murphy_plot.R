@@ -26,10 +26,8 @@ quantile_score <- function(y_true, y_pred, alpha){
   return((1 * (y_true < y_pred) - alpha) * (y_pred - y_true))
 }
 
-get_murphy_plots <- function(data, alpha, all_quantiles=FALSE) {
-  if (!all_quantiles) {
-    df <- filter(data, quantile == alpha)
-  }
+get_murphy_plots <- function(data, alpha) {
+  df <- filter(data, quantile == alpha)
 
   score_label <- df %>%
     mutate(qs = quantile_score(truth, value, quantile)) %>% 
@@ -51,6 +49,7 @@ get_murphy_plots <- function(data, alpha, all_quantiles=FALSE) {
   xmax = max(df$theta)
 
   g <- ggplot(df) +
+    facet_wrap(~quantile, strip.position="right") +
     geom_line(aes(x=theta, y=mean_score, color=label), size=0.5) +
     # facet_wrap("quantile", scales = "free", nrow=1) +
     xlab(expression(paste("Threshold ", theta))) +
@@ -70,50 +69,6 @@ get_murphy_plots <- function(data, alpha, all_quantiles=FALSE) {
     scale_x_continuous(breaks = 0:4 / 4, labels=function(x) ifelse(x == 0, "0", x)) +
     labs(color = "Model (quantile score)") +
     expand_limits(x = xmax, y = ymax)
-
-  if (all_quantiles) {
-    g <- g + facet_wrap(~quantile, nrow=10)
-  }
-
-  return(g)
-}
-
-get_murphy_diffs <- function(data) {
-  model_vec <- unique(data$model)
-
-  murphy_scores <- data %>%
-    group_by(model, quantile) %>%
-    summarize(get_elementary_scores(truth, value, quantile, n=500), .groups = "drop") %>%
-    pivot_wider(id_cols = c(quantile, theta), names_from=model, values_from=mean_score)
-
-  diff_cols <- character(0)
-  for (i in 2:length(model_vec)) {
-    new_diff <- paste(model_vec[i], "-", model_vec[i-1])
-    murphy_scores[new_diff] <- murphy_scores[model_vec[i]] - murphy_scores[model_vec[i-1]]
-    diff_cols <- c(diff_cols, new_diff)
-  }
-
-  murphy_diff_scores <- select(murphy_scores, quantile, theta, all_of(diff_cols)) %>%
-    pivot_longer(cols=all_of(diff_cols), names_to="ModelDiff")
-
-  g <- ggplot(murphy_diff_scores) +
-    facet_wrap("ModelDiff", nrow=1) +
-    geom_line(aes(x=theta, y=value, color=quantile, group=quantile), size=0.5) +
-    # facet_wrap("quantile", scales = "free", nrow=1) +
-    xlab(expression(paste("Threshold ", theta))) +
-    ylab("Elementary score") +
-    theme_bw(base_size = 11) +
-    theme(legend.justification=c(1,1), legend.position=c(0.99,0.99),
-          legend.title=element_text(size=6, face = "bold"),
-          legend.text=element_text(size=6),
-          legend.title.align = 0,
-          legend.text.align = 0,
-          # aspect.ratio = 1,
-          legend.key.size = unit(0.4, "lines"),
-          legend.background = element_blank(),
-          panel.grid.major = element_line(size = 0.05),
-          panel.grid.minor = element_line(size = 0.05)) +
-    scale_x_continuous(breaks = 0:4 / 4, labels=function(x) ifelse(x == 0, "0", x))
 
   return(g)
 }

@@ -79,28 +79,20 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
 
   super_title <- ggplot() +
     ggtitle("GEFCom14 Wind Track Zone 1") +
-    theme(plot.background=element_blank(), panel.background=element_blank(),
-          plot.title=element_text(size=15))
+    theme(plot.background=element_blank(), panel.background=element_blank())
 
   forecast_plots <- get_forecast_plots(df)
-  forecast_plots <- forecast_plots +
-    ggtitle("Quantile Forecasts")
   print("forecast_plot done")
 
   coverage_plots <- get_coverage_plots(df, B_COVERAGE)
-  coverage_plots <- coverage_plots +
-    ggtitle("Coverage Plots")
   print("coverage_plot done")
 
   reliability_plots <- get_reliability_plots(df, RELIABILITY_QUANTIL, N_RES_RELIABILITY,
                                              add_layer=rel_add, load_interrim=TRUE)
-  reliability_plots <- reliability_plots +
-    ggtitle(expr(paste("Reliability Diagrams (", alpha, " = ", !!RELIABILITY_QUANTIL, ")")))
   print("reliability_plot done")
 
   murphy_plots <- get_murphy_plots(df, MURPHY_QUANTIL)
-  murphy_plots <- murphy_plots +
-    ggtitle(expr(paste("Murphy Diagram (", alpha, " = ", !!MURPHY_QUANTIL, ")")))
+  # ggtitle(expr(paste("Murphy Diagram (", alpha, " = ", !!MURPHY_QUANTIL, ")")))
   print("murphy_plot done")
   # old heights c(0.05, 0.228, 0.245, 0.249, 0.228)
   assembled_plot <- grid.arrange(super_title, forecast_plots, coverage_plots, reliability_plots,
@@ -112,4 +104,4 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   return(assembled_plot)
 }
 
-pl <- assemble_plot(name="Figure10_25", task=1:12, zone=1, rel_add="points")
+pl <- assemble_plot(name="Figure10_26", task=1:12, zone=1, rel_add="points")

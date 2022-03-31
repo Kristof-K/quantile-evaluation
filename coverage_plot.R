@@ -66,6 +66,8 @@ get_confidence_values <- function(df, B) {
 }
 
 plot_coverage <- function(df, B = 1000, type = "confidence", difference = FALSE) {
+  margins <- as.numeric(theme_bw()$plot.margin)
+  margins[2] <- margins[2] + 20    # manipulate right margin
 
   # some customizations used in all plots
   my_theme <- list(
@@ -75,7 +77,11 @@ plot_coverage <- function(df, B = 1000, type = "confidence", difference = FALSE)
     ylab("Coverage"),
     theme_bw(base_size = 11),
     theme(panel.grid.major = element_line(size = 0.05),
-          panel.grid.minor = element_line(size = 0.05))
+          panel.grid.minor = element_line(size = 0.05),
+          plot.margin = unit(margins, "points"),
+          strip.background.x = element_blank(),  # no facet boxes in x direction
+          strip.text.x = element_blank())        # no facet texts in x direction
+
   )
 
   # compute coverage on full sample
