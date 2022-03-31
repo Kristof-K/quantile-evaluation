@@ -2,17 +2,15 @@ library(tidyverse)
 library(lubridate)
 Sys.setlocale("LC_ALL", "C")
 
-get_forecast_plots <- function(df, time_interval=NA) {
-  if (is.na(time_interval)) {
-    # filter for each model and quantile first 24 * 10 entries
-    df <- group_by(df, model, quantile) %>%
-      group_modify(function(df, model, quantile) df[17:(24 * 7 + 7),]) %>%
-      ungroup()
-  } else {
-    df <- filter(df, target_end_date >= time_interval[1],
-                 target_end_date <= time_interval[2],
-                 location == 1)
-  }
+get_forecast_plots <- function(df) {
+  # filter for each model and quantile first 24 * 7 +- padding entries
+  df <- group_by(df, model, quantile) %>%
+    group_modify(function(df, model, quantile) df[17:(24 * 7 + 7),]) %>%
+    ungroup()
+
+  zero_hour <- hour(df$target_end_date) == 0
+  # drop first date as it is not displayed and pick 2nd and 6th date to display
+  my_dates <- unique(df$target_end_date[zero_hour])[c(2, 6)]
 
   median_and_truth <- filter(df, quantile == 0.5)
 
@@ -44,7 +42,7 @@ get_forecast_plots <- function(df, time_interval=NA) {
                 aes(ymin=lower, ymax=upper, group=level, alpha=level), fill='deepskyblue4') +
     geom_line(data=median_and_truth, aes(y=value, group=1, color="Median")) +
     geom_line(data=median_and_truth, aes(y=truth, group=1, color="Truth")) +
-    scale_x_datetime(date_breaks = "3 days") +
+    scale_x_datetime(date_minor_breaks = "days", breaks = as.POSIXct(my_dates)) +
     scale_color_manual(name=NULL, values=c("Truth"="darkred", "Median"="deepskyblue3"),
                        guide=guide_legend(order=1, direction="horizontal")) +
     scale_alpha_manual(name="Prediction interval", values=rel_alpha,

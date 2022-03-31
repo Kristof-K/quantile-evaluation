@@ -77,10 +77,6 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
 
   calc_scores(df)
 
-  super_title <- ggplot() +
-    ggtitle("GEFCom14 Wind Track Zone 1") +
-    theme(plot.background=element_blank(), panel.background=element_blank())
-
   forecast_plots <- get_forecast_plots(df)
   print("forecast_plot done")
 
@@ -95,13 +91,14 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   # ggtitle(expr(paste("Murphy Diagram (", alpha, " = ", !!MURPHY_QUANTIL, ")")))
   print("murphy_plot done")
   # old heights c(0.05, 0.228, 0.245, 0.249, 0.228)
-  assembled_plot <- grid.arrange(super_title, forecast_plots, coverage_plots, reliability_plots,
-                                 murphy_plots, ncol=1, heights=c(0.05, 0.245, 0.2375, 0.2375, 0.23))
+  assembled_plot <- grid.arrange(forecast_plots, coverage_plots, reliability_plots,
+                                 murphy_plots, ncol=1,
+                                 heights=c(0.258, 0.25, 0.25, 0.242))
 
   ggsave(paste0("figures/Wind/", name, ".pdf"), plot=assembled_plot,
-         width=160, height=190, unit="mm", device = "pdf", dpi=300)
+         width=160, height=200, unit="mm", device = "pdf", dpi=300)
   print("Finished.")
   return(assembled_plot)
 }
 
-pl <- assemble_plot(name="Figure10_27", task=1:12, zone=1, rel_add="points")
+pl <- assemble_plot(name="Figure10_29_confidence", task=1:12, zone=1, rel_add="points")

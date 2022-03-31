@@ -143,6 +143,6 @@ plot_coverage <- function(df, B = 1000, type = "confidence", difference = FALSE)
 
 get_coverage_plots <- function(df, B) {
   g <- plot_coverage(df, B=B, type="confidence", difference=FALSE)
-  # g <- plot_coverage(df, B=B, type="consistency", difference=TRUE)
+  # g <- plot_coverage(df, B=B, type="consistency", difference=FALSE)
   return(g)
 }
