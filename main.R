@@ -31,7 +31,6 @@ get_forecasts <- function(tasks=1:12, zones=NA) {
     files <- c(files, paste0("Task", tasks, "_", z, ".csv"))
   }
 
-  y_ref <- NULL
   for (name in names(SOURCES)) {
     for (f in files) {
       csv_path <- paste0(SOURCES[[name]], f)
@@ -47,17 +46,6 @@ get_forecasts <- function(tasks=1:12, zones=NA) {
       df <- filter(df, !is.na(truth))
 
       collect_data <- rbind(collect_data, df)
-    }
-    # in order to use truth for joining we have to set it equal
-    # (it's a float, thus small deviations can disturb joining)
-    if (is.null(y_ref)) {
-      y_ref <- collect_data$truth
-    } else {
-      # check for correctness
-      if (sum(abs(y_ref - collect_data[collect_data$model == name, "truth"])) >= 10^-6) {
-        print("Possible error")
-      }
-      collect_data[collect_data$model == name, "truth"] <- y_ref
     }
   }
   return(collect_data)
@@ -94,11 +82,11 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   assembled_plot <- grid.arrange(forecast_plots, coverage_plots, reliability_plots,
                                  murphy_plots, ncol=1,
                                  heights=c(0.258, 0.25, 0.25, 0.242))
-
+  # for fix aspect ratios use 135 as width
   ggsave(paste0("figures/Wind/", name, ".pdf"), plot=assembled_plot,
-         width=160, height=200, unit="mm", device = "pdf", dpi=300)
+         width=150, height=200, unit="mm", device = "pdf", dpi=300)
   print("Finished.")
   return(assembled_plot)
 }
 
-pl <- assemble_plot(name="Figure10_29_confidence", task=1:12, zone=1, rel_add="points")
+pl <- assemble_plot(name="Figure10_31", task=1:12, zone=1, rel_add="points")
