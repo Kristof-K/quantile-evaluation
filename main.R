@@ -93,7 +93,7 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   print("coverage_plot done")
 
   reliability_plots <- get_reliability_plots(df, RELIABILITY_QUANTIL, N_RES_RELIABILITY,
-                                             add_layer=rel_add, load_interrim=FALSE)
+                                             add_layer=rel_add, load_interrim=TRUE)
   reliability_plots <- reliability_plots +
     ggtitle(expr(paste("Reliability Diagrams (", alpha, " = ", !!RELIABILITY_QUANTIL, ")")))
   print("reliability_plot done")
@@ -107,9 +107,9 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
                                  murphy_plots, ncol=1, heights=c(0.05, rep(0.95/4, 4)))
 
   ggsave(paste0("figures/Wind/", name, ".pdf"), plot=assembled_plot,
-         width=200, height=260, unit="mm", device = "pdf", dpi=300)
+         width=160, height=190, unit="mm", device = "pdf", dpi=300)
   print("Finished.")
   return(assembled_plot)
 }
 
-pl <- assemble_plot(name="Figure10_24", task=1:12, zone=1, rel_add="points")
+pl <- assemble_plot(name="Figure10_25", task=1:12, zone=1, rel_add="points")

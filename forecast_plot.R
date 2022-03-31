@@ -56,6 +56,7 @@ get_forecast_plots <- function(df, time_interval=NA) {
           legend.background=element_blank(), legend.box.background=element_blank(),
           legend.box.just="right", legend.title=element_text(size=6, face = "bold"),
           legend.text=element_text(size=6), legend.margin=margin(1,2,1,70),
-          legend.key.size = unit(0.4, "lines"))
+          legend.key.size = unit(0.4, "lines"), panel.grid.major = element_line(size = 0.05),
+          panel.grid.minor = element_line(size = 0.05))
   return(g)
 }
