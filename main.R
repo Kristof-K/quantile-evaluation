@@ -96,7 +96,7 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   print("murphy_plot done")
   # old heights c(0.05, 0.228, 0.245, 0.249, 0.228)
   assembled_plot <- grid.arrange(super_title, forecast_plots, coverage_plots, reliability_plots,
-                                 murphy_plots, ncol=1, heights=c(0.05, rep(0.95/4, 4)))
+                                 murphy_plots, ncol=1, heights=c(0.05, 0.245, 0.2375, 0.2375, 0.23))
 
   ggsave(paste0("figures/Wind/", name, ".pdf"), plot=assembled_plot,
          width=160, height=190, unit="mm", device = "pdf", dpi=300)
@@ -104,4 +104,4 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   return(assembled_plot)
 }
 
-pl <- assemble_plot(name="Figure10_26", task=1:12, zone=1, rel_add="points")
+pl <- assemble_plot(name="Figure10_27", task=1:12, zone=1, rel_add="points")
