@@ -33,11 +33,8 @@ get_forecast_plots <- function(df) {
 
   bands <- left_join(df_lower, df_upper, by=c("model", "target_end_date", "level"))
 
-  margins <- as.numeric(theme_bw()$plot.margin)
-  margins[2] <- margins[2] + 20    # manipulate right margin
-
   g <- ggplot(mapping=aes(x=target_end_date)) +
-    facet_wrap(~model, nrow=1) +
+    facet_grid(""~model) +  # want to denote row with empty string (to have alignment)
     geom_ribbon(data=bands,
                 aes(ymin=lower, ymax=upper, group=level, alpha=level), fill='deepskyblue4') +
     geom_line(data=median_and_truth, aes(y=value, group=1, color="Median")) +
@@ -62,6 +59,6 @@ get_forecast_plots <- function(df) {
           legend.key.size = unit(0.4, "lines"),
           panel.grid.major = element_line(size = 0.05), # linewidth of background grid
           panel.grid.minor = element_line(size = 0.05), # linewidth of background grid
-          plot.margin = unit(margins, "points"))
+          strip.background.y = element_blank())         # remove grey box from facet_grid in rows
   return(g)
 }

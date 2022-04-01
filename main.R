@@ -78,15 +78,15 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   murphy_plots <- get_murphy_plots(df, MURPHY_QUANTIL)
   # ggtitle(expr(paste("Murphy Diagram (", alpha, " = ", !!MURPHY_QUANTIL, ")")))
   print("murphy_plot done")
-  # old heights c(0.05, 0.228, 0.245, 0.249, 0.228)
+
   assembled_plot <- grid.arrange(forecast_plots, coverage_plots, reliability_plots,
                                  murphy_plots, ncol=1,
                                  heights=c(0.258, 0.25, 0.25, 0.242))
   # for fix aspect ratios use 135 as width
   ggsave(paste0("figures/Wind/", name, ".pdf"), plot=assembled_plot,
-         width=150, height=200, unit="mm", device = "pdf", dpi=300)
+         width=160, height=200, unit="mm", device = "pdf", dpi=300)
   print("Finished.")
   return(assembled_plot)
 }
 
-pl <- assemble_plot(name="Figure10_31", task=1:12, zone=1, rel_add="points")
+pl <- assemble_plot(name="Figure10_33", task=1:12, zone=1, rel_add="points")
