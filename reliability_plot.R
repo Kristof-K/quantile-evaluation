@@ -1,5 +1,8 @@
 library(tidyverse)
+library(latex2exp)
 library(isotone)
+
+DIGITS <- 3
 
 # Reliability Diagrams
 # Code by Daniel with adaptions
@@ -146,11 +149,17 @@ get_reliability_plots <- function(df, quantile_level, n_resamples, add_layer="hi
   recal_and_bands <- recal_and_bands %>%
     mutate_at(c("x_rc", "lower", "upper"), ~ replace(., .<0, 0))
 
+  # The Score is exactly equal to uMCB + cMCB - DSC + UNC.
+  # However, when rounding the values there may be slight discrepancies between the rounded values.
+  # We avoid this for didactic reasons by computing the score from the rounded values.
+  recal_and_bands$score <- round(recal_and_bands$umcb, DIGITS) + round(recal_and_bands$cmcb, DIGITS) -
+    round(recal_and_bands$dsc, DIGITS) + round(recal_and_bands$unc, DIGITS)
+
   scores <- recal_and_bands %>%
     group_by(model, quantile) %>%
     distinct(across(score:pval_ucond)) %>%
-    mutate(label = paste0(c("QS ", "uMCB ","cMCB ","DSC ","UNC "),
-                          format(round(c(score, umcb, cmcb, dsc, unc), digits=4), scientific=FALSE, nsmall=4),
+    mutate(label = paste0(c("S ", "uMCB ","cMCB ","DSC ","UNC "),
+                          format(round(c(score, umcb, cmcb, dsc, unc), digits=DIGITS), scientific=FALSE, nsmall=DIGITS),
                           c("", paste0(" [p = ", format(round(pval_ucond, digits = 2), nsmall=2),"]"), "", "", ""),
                           c("", "", paste0(" [p = ", format(round(pval_cond, digits = 2), nsmall=2),"]"), "", ""),
                           collapse = "\n"))

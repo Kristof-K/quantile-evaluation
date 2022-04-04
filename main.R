@@ -89,4 +89,4 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   return(assembled_plot)
 }
 
-pl <- assemble_plot(name="Figure10_33", task=1:12, zone=1, rel_add="points")
+pl <- assemble_plot(name="Figure10_34", task=1:12, zone=1, rel_add="points")

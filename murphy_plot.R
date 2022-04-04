@@ -33,7 +33,7 @@ get_murphy_plots <- function(data, alpha) {
     mutate(qs = quantile_score(truth, value, quantile)) %>% 
     group_by(model, quantile) %>%
     summarize(mean_qs = mean(qs),
-              label = paste0(unique(model), " (", format(round(mean_qs, digits = 4), scientific=FALSE, nsmall=4),
+              label = paste0(unique(model), " (", format(round(mean_qs, digits = 3), scientific=FALSE, nsmall=3),
                              ")", collapse = "\n"),
               .groups = "drop")
   
@@ -67,7 +67,7 @@ get_murphy_plots <- function(data, alpha) {
           panel.grid.minor = element_line(size = 0.05)) + 
     scale_color_brewer(palette="Set1") +
     scale_x_continuous(breaks = 0:4 / 4, labels=function(x) ifelse(x == 0, "0", x)) +
-    labs(color = "Model (quantile score)") +
+    labs(color = "Model (pinball loss)") +
     expand_limits(x = xmax, y = ymax)
 
   return(g)
