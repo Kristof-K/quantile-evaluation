@@ -24,7 +24,7 @@ reldiag = function(x, y, alpha = 0.5, n_resamples = 999, digits = 3, region_leve
 
     return(gpava(ranking,y,solver = weighted.fractile,p = alpha,ties = "secondary")$x)
   }
-  score = function(x, y) mean(2*(as.numeric(x >= y) - alpha)*(x-y))
+  score = function(x, y) mean((as.numeric(x >= y) - alpha)*(x-y))
   marg = function(x) quantile(x, alpha, type = 1)
   identif = function(x, y) as.numeric(x > y) - alpha
   score_label = "QS "
@@ -48,6 +48,12 @@ reldiag = function(x, y, alpha = 0.5, n_resamples = 999, digits = 3, region_leve
   cmcb = s_rc_ucond - s_rc
   dsc = s_mg - s_rc
   unc = s_mg
+
+  # The Score is exactly equal to uMCB + cMCB - DSC + UNC.
+  # However, when rounding the values there may be slight discrepancies between the rounded values.
+  # We avoid this for didactic reasons by computing the score from the rounded values.
+  s = sum(round(c(umcb,cmcb,-dsc,unc), digits))
+
 
   # test: mean identification zero? (t-test)
   # v = identif(x,y)
@@ -83,11 +89,10 @@ reldiag = function(x, y, alpha = 0.5, n_resamples = 999, digits = 3, region_leve
   rank_obs = tail(rank(c(mcb_resamples,mcb)),1)
   pval = 1 - (rank_obs - 1)/(n_resamples + 1)
 
-  lower <- if (low >= 1) x_rc_resamples_sorted[low, ] else 0
   results <- data.frame(quantile = alpha, x = x, y = y, x_rc = x_rc,
-                        lower = lower,
+                        lower = x_rc_resamples_sorted[low,],
                         upper = x_rc_resamples_sorted[up,],
-                        score = s, quantile = alpha,
+                        score = s,
                         umcb = umcb, cmcb = cmcb, mcb = mcb, dsc = dsc, unc = unc,
                         pval_cond = pval, pval_ucond = pval_ucond)
 }
@@ -119,15 +124,15 @@ annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax
                                           ymin = ymin, ymax = ymax))
 }
 
-get_annotation <- function(df, quantile, facet_lims) {
-  xmax = max(facet_lims$mx)
+get_annotation <- function(df, model, xmax){
   inset_plot <- get_inset(df, xmax=xmax)
   annotation_custom2(grob=ggplotGrob(inset_plot),
-                     data = subset(df, quantile == unique(df$quantile)),
+                     data = subset(df, model == unique(df$model)),
                      ymin = min(facet_lims$mn), ymax=max(facet_lims$mx)/4, xmin=max(facet_lims$mx)/1.5, xmax=0.975*max(facet_lims$mx))
   #ymin = 0, ymax=750, xmin=1500, xmax=2750)
   #ymin = -2000, ymax=4000, xmin=10000, xmax=15000)
 }
+
 
 get_reliability_plots <- function(df, quantile_level, n_resamples, add_layer="hist1",
                                   load_interrim=FALSE) {
@@ -141,9 +146,9 @@ get_reliability_plots <- function(df, quantile_level, n_resamples, add_layer="hi
     recal_and_bands$lower <- pmin(1, pmax(0, recal_and_bands$lower))
     recal_and_bands$upper <- pmin(1, pmax(0, recal_and_bands$upper))
 
-    write.csv(recal_and_bands, "interrim/wind_pava_5.csv")
+    write.csv(recal_and_bands, "interrim/wind_pava_6.csv")
   } else {
-    recal_and_bands <- read.csv("interrim/wind_pava_5.csv", row.names=1)
+    recal_and_bands <- read.csv("interrim/wind_pava_6.csv", row.names=1)
   }
 
   recal_and_bands <- recal_and_bands %>%
@@ -180,8 +185,8 @@ get_reliability_plots <- function(df, quantile_level, n_resamples, add_layer="hi
     #geom_point(color = "red", size=0.5) +
     # geom_step(color = "red", direction = "vh") +
     geom_smooth(aes(ymin = lower, ymax = upper), linetype = 0, stat = "identity", fill = "skyblue3") +
-  {if (add_layer == "points") geom_line(aes(x,lower), color = "deepskyblue2", alpha=0.5, size=0.4)} +
-  {if (add_layer == "points") geom_line(aes(x,upper), color = "deepskyblue2", alpha=0.5, size=0.4)} +
+  {if (add_layer == "points") geom_line(aes(x,lower), color = "deepskyblue2")} +
+  {if (add_layer == "points") geom_line(aes(x,upper), color = "deepskyblue2")} +
     geom_line(color = "firebrick3") +
   {if (add_layer == "hist1") geom_blank(data = facet_lims, aes(x = mx, y = mx))} +
   {if (add_layer == "hist1") geom_blank(data = facet_lims, aes(x = mn, y = mn))} +
