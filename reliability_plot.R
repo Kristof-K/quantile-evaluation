@@ -154,20 +154,19 @@ get_reliability_plots <- function(df, quantile_level, n_resamples, add_layer="hi
   recal_and_bands <- recal_and_bands %>%
     mutate_at(c("x_rc", "lower", "upper"), ~ replace(., .<0, 0))
 
-  # The Score is exactly equal to uMCB + cMCB - DSC + UNC.
-  # However, when rounding the values there may be slight discrepancies between the rounded values.
-  # We avoid this for didactic reasons by computing the score from the rounded values.
-  recal_and_bands$score <- round(recal_and_bands$umcb, DIGITS) + round(recal_and_bands$cmcb, DIGITS) -
-    round(recal_and_bands$dsc, DIGITS) + round(recal_and_bands$unc, DIGITS)
-
   scores <- recal_and_bands %>%
     group_by(model, quantile) %>%
     distinct(across(score:pval_ucond)) %>%
-    mutate(label = paste0(c("S ", "uMCB ","cMCB ","DSC ","UNC "),
-                          format(round(c(score, umcb, cmcb, dsc, unc), digits=DIGITS), scientific=FALSE, nsmall=DIGITS),
-                          c("", paste0(" [p = ", format(round(pval_ucond, digits = 2), nsmall=2),"]"), "", "", ""),
-                          c("", "", paste0(" [p = ", format(round(pval_cond, digits = 2), nsmall=2),"]"), "", ""),
+    mutate(label = paste0(c("\nuMCB ","cMCB ","DSC ","UNC "),
+                          format(round(c(umcb, cmcb, dsc, unc), digits = DIGITS), nsmall=DIGITS),
+                          c(paste0(" [p = ", format(round(pval_ucond, digits = 2), nsmall=2),"]"),
+                          paste0(" [p = ", format(round(pval_cond, digits = 2), nsmall=2),"]"), "", ""),
                           collapse = "\n"))
+
+  qs_scores <- recal_and_bands %>%
+    group_by(model, quantile) %>%
+    distinct(across(score:pval_ucond)) %>%
+    summarise(score = score, .groups = "drop")
 
   facet_lims <- recal_and_bands %>%
     group_by(model, quantile) %>%
@@ -196,6 +195,10 @@ get_reliability_plots <- function(df, quantile_level, n_resamples, add_layer="hi
     #labs(title = paste0(model, ":\n", target))  +
     geom_label(data = scores, mapping = aes(x = -Inf, y = Inf, label = label),
                size = 6*0.36, hjust = 0, vjust = 1, label.size = NA, alpha=0, label.padding = unit(1, "lines")) +
+    geom_label(data = qs_scores, mapping = aes(x = -Inf, y = Inf,
+                                                 label = paste0("bar(S)~", score)),parse = TRUE,
+               size = 6*0.36, hjust = 0, vjust = 1, label.size = NA,
+               alpha=0, label.padding = unit(1, "lines")) +
     scale_x_continuous(guide = guide_axis(check.overlap = TRUE), breaks=0:4 / 4,
                        labels=function(x) ifelse(x == 0, "0", x)) +
     scale_y_continuous(breaks=0:4 / 4, labels=function(x) ifelse(x == 0, "0", x)) +

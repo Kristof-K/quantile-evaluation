@@ -72,7 +72,7 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   print("coverage_plot done")
 
   reliability_plots <- get_reliability_plots(df, RELIABILITY_QUANTIL, N_RES_RELIABILITY,
-                                             add_layer=rel_add, load_interrim=FALSE)
+                                             add_layer=rel_add, load_interrim=TRUE)
   print("reliability_plot done")
 
   murphy_plots <- get_murphy_plots(df, MURPHY_QUANTIL)
@@ -89,4 +89,4 @@ assemble_plot <- function(name, task=1, zone=NA, rel_add="hist1") {
   return(assembled_plot)
 }
 
-pl <- assemble_plot(name="Figure10_35", task=1:12, zone=1, rel_add="points")
+pl <- assemble_plot(name="Figure10_35_2", task=1:12, zone=1, rel_add="points")
