@@ -154,12 +154,6 @@ get_reliability_plots <- function(df, quantile_level, n_resamples, add_layer="hi
   recal_and_bands <- recal_and_bands %>%
     mutate_at(c("x_rc", "lower", "upper"), ~ replace(., .<0, 0))
 
-  # The Score is exactly equal to uMCB + cMCB - DSC + UNC.
-  # However, when rounding the values there may be slight discrepancies between the rounded values.
-  # We avoid this for didactic reasons by computing the score from the rounded values.
-  recal_and_bands$score <- round(recal_and_bands$umcb, DIGITS) + round(recal_and_bands$cmcb, DIGITS) -
-    round(recal_and_bands$dsc, DIGITS) + round(recal_and_bands$unc, DIGITS)
-
   scores <- recal_and_bands %>%
     group_by(model, quantile) %>%
     distinct(across(score:pval_ucond)) %>%
