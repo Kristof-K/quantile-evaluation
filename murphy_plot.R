@@ -32,7 +32,7 @@ get_murphy_plots <- function(data, alpha) {
   score_label <- df %>%
     mutate(qs = quantile_score(truth, value, quantile)) %>% 
     group_by(model, quantile) %>%
-    summarize(mean_qs = mean(qs),
+    summarize(mean_qs = min(mean(qs), 0.055),
               label = paste0(unique(model), " (", format(round(mean_qs, digits = 3), scientific=FALSE, nsmall=3),
                              ")", collapse = "\n"),
               .groups = "drop")
